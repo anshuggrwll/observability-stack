@@ -1,0 +1,15 @@
+{
+  "name": "monitoring-app",
+  "version": "1.0.0",
+  "description": "Simple app with fast and slow endpoints for monitoring",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "prom-client": "^15.1.3"
+  }
+}
+
