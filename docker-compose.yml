@@ -1,4 +1,14 @@
 services:
+  app:
+    build: .
+    container_name: monitoring-app
+    ports:
+      - "8081:8081"
+    environment:
+      PORT: 8081
+      SLOW_DELAY_MS: 5000
+    restart: unless-stopped
+
   prometheus:
     image: prom/prometheus:latest
     container_name: monitoring-prometheus
@@ -8,4 +18,42 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
+    depends_on:
+      - app
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:latest
+    container_name: monitoring-loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+    command:
+      - "-config.file=/etc/loki/local-config.yaml"
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: monitoring-promtail
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command:
+      - "-config.file=/etc/promtail/config.yml"
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: monitoring-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+      - loki
     restart: unless-stopped
