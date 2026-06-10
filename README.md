@@ -6,7 +6,7 @@ A small Node.js monitoring app with Prometheus metrics, Grafana dashboards, and 
 
 | Service | URL | Description |
 |---------|-----|-------------|
-| App | http://localhost:8081 | Node.js app exposing `/metrics` |
+| App | http://localhost:8082 | Node.js app exposing `/metrics` (host port 8082 → container 8081) |
 | Prometheus | http://localhost:9090 | Scrapes app and Grafana metrics |
 | Grafana | http://localhost:3000 | Dashboards, Explore (metrics + logs) |
 | Loki | http://localhost:3100 | Log storage (queried via Grafana) |
@@ -75,11 +75,11 @@ Do not run both the Docker app and local `npm start` on port `8081` at the same 
 Prometheus config is mounted from `prometheus.yml` and scrapes:
 
 ```text
-http://192.168.1.9:8081/metrics   (monitoring-app)
-http://grafana:3000/metrics       (grafana)
+http://app:8081/metrics       (monitoring-app, via Docker network)
+http://grafana:3000/metrics   (grafana)
 ```
 
-Update `192.168.1.9` in `prometheus.yml` to your machine's IP if it changes.
+Both Prometheus and the app run in Docker Compose, so Prometheus reaches the app by service name (`app`), not the host IP.
 
 Check scrape targets: http://localhost:9090/targets
 
@@ -112,9 +112,11 @@ Other useful queries:
 Generate sample traffic:
 
 ```bash
-curl http://localhost:8081/
-curl http://localhost:8081/slow
+curl http://localhost:8082/
+curl http://localhost:8082/slow
 ```
+
+> **Colima users:** Port `8081` localhost forwarding is unreliable on Colima, so Docker maps host `8082` → container `8081`. If `localhost:8082` fails, try `http://192.168.64.2:8082` (Colima VM IP from `colima ls`).
 
 Each request is logged to stdout as `GET / 200`, `GET /slow 200`, etc.
 
